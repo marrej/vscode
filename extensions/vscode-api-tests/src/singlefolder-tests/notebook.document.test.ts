@@ -411,7 +411,7 @@ suite.skip('Notebook Document', function () {
 		assert.strictEqual(document.isDirty, false);
 	});
 
-	test('onDidOpenNotebookDocument - emit event only once when opened in two editors', async function () {
+	test.skip('onDidOpenNotebookDocument - emit event only once when opened in two editors', async function () { // TODO@rebornix https://github.com/microsoft/vscode/issues/157222
 		const uri = await utils.createRandomFile(undefined, undefined, '.nbdtest');
 		let counter = 0;
 		testDisposables.push(vscode.workspace.onDidOpenNotebookDocument(nb => {
