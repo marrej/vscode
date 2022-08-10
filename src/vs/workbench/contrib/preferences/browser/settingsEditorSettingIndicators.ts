@@ -12,7 +12,6 @@ import { Emitter } from 'vs/base/common/event';
 import { IDisposable, DisposableStore, MutableDisposable } from 'vs/base/common/lifecycle';
 import { ILanguageService } from 'vs/editor/common/languages/language';
 import { localize } from 'vs/nls';
-import { ICommandService } from 'vs/platform/commands/common/commands';
 import { ConfigurationTarget, IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { getIgnoredSettings } from 'vs/platform/userDataSync/common/settingsMerge';
 import { getDefaultIgnoredSettings, IUserDataSyncEnablementService } from 'vs/platform/userDataSync/common/userDataSync';
@@ -35,7 +34,6 @@ export interface ISettingOverrideClickEvent {
  */
 export class SettingsTreeIndicatorsLabel implements IDisposable {
 	private indicatorsContainerElement: HTMLElement;
-	private workspaceTrustElement: HTMLElement;
 	private scopeOverridesElement: HTMLElement;
 	private scopeOverridesLabel: SimpleIconLabel;
 	private scopeOverridesHover: MutableDisposable<ICustomHover>;
@@ -52,8 +50,7 @@ export class SettingsTreeIndicatorsLabel implements IDisposable {
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IHoverService hoverService: IHoverService,
 		@IUserDataSyncEnablementService private readonly userDataSyncEnablementService: IUserDataSyncEnablementService,
-		@ILanguageService private readonly languageService: ILanguageService,
-		@ICommandService private readonly commandService: ICommandService) {
+		@ILanguageService private readonly languageService: ILanguageService) {
 		this.indicatorsContainerElement = DOM.append(container, $('.misc-label'));
 		this.indicatorsContainerElement.style.display = 'inline';
 
@@ -68,39 +65,12 @@ export class SettingsTreeIndicatorsLabel implements IDisposable {
 
 		this.simpleHoverStore = new DisposableStore();
 		const scopeOverridesIndicator = this.createScopeOverridesIndicator();
-		this.workspaceTrustElement = this.createWorkspaceTrustElement();
 		this.scopeOverridesElement = scopeOverridesIndicator.element;
 		this.scopeOverridesLabel = scopeOverridesIndicator.label;
 		this.syncIgnoredElement = this.createSyncIgnoredElement();
 		this.defaultOverrideIndicatorElement = this.createDefaultOverrideIndicator();
 		this.scopeOverridesHover = new MutableDisposable();
 		this.profilesEnabled = this.configurationService.getValue<boolean>('workbench.experimental.settingsProfiles.enabled');
-	}
-
-	private createWorkspaceTrustElement(): HTMLElement {
-		const workspaceTrustElement = $('span.setting-item-workspace-trust');
-		const workspaceTrustLabel = new SimpleIconLabel(workspaceTrustElement);
-		workspaceTrustLabel.text = localize('workspaceUntrustedLabel', "Requires Workspace Trust");
-		const contentFallback = localize('trustLabel', "This setting can only be applied in a trusted workspace.");
-
-		const contentMarkdownString = contentFallback + ` [${localize('manageWorkspaceTrust', "Manage Workspace Trust")}](manage-workspace-trust).`;
-		const content: ITooltipMarkdownString = {
-			markdown: {
-				value: contentMarkdownString,
-				isTrusted: false,
-				supportHtml: false
-			},
-			markdownNotSupportedFallback: contentFallback
-		};
-		const options: IUpdatableHoverOptions = {
-			linkHandler: (url: string) => {
-				this.commandService.executeCommand('workbench.trust.manage');
-				this.scopeOverridesHover.value?.hide();
-			}
-		};
-
-		this.simpleHoverStore.add(setupCustomHover(this.hoverDelegate, workspaceTrustElement, content, options));
-		return workspaceTrustElement;
 	}
 
 	private createScopeOverridesIndicator(): { element: HTMLElement; label: SimpleIconLabel } {
@@ -126,7 +96,7 @@ export class SettingsTreeIndicatorsLabel implements IDisposable {
 	}
 
 	private render() {
-		const elementsToShow = [this.scopeOverridesElement, this.workspaceTrustElement, this.syncIgnoredElement, this.defaultOverrideIndicatorElement].filter(element => {
+		const elementsToShow = [this.scopeOverridesElement, this.syncIgnoredElement, this.defaultOverrideIndicatorElement].filter(element => {
 			return element.style.display !== 'none';
 		});
 
@@ -142,11 +112,6 @@ export class SettingsTreeIndicatorsLabel implements IDisposable {
 			DOM.append(this.indicatorsContainerElement, elementsToShow[elementsToShow.length - 1]);
 			DOM.append(this.indicatorsContainerElement, $('span', undefined, ')'));
 		}
-	}
-
-	updateWorkspaceTrust(element: SettingsTreeSettingElement) {
-		this.workspaceTrustElement.style.display = element.isUntrusted ? 'inline' : 'none';
-		this.render();
 	}
 
 	updateSyncIgnored(element: SettingsTreeSettingElement, ignoredSettings: string[]) {
@@ -356,11 +321,6 @@ function getAccessibleScopeDisplayMidSentenceText(completeScope: string, languag
 
 export function getIndicatorsLabelAriaLabel(element: SettingsTreeSettingElement, configurationService: IConfigurationService, languageService: ILanguageService): string {
 	const ariaLabelSections: string[] = [];
-
-	// Add workspace trust text
-	if (element.isUntrusted) {
-		ariaLabelSections.push(localize('workspaceUntrustedAriaLabel', "Workspace untrusted; setting value will not take effect"));
-	}
 
 	const profilesEnabled = configurationService.getValue<boolean>('workbench.experimental.settingsProfiles.enabled');
 	if (element.hasPolicyValue) {
