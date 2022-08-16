@@ -94,6 +94,7 @@ import { checkProposedApiEnabled, ExtensionIdentifierSet, isProposedApiEnabled }
 import { DebugConfigurationProviderTriggerKind } from 'vs/workbench/contrib/debug/common/debug';
 import { equalsIgnoreCase } from 'vs/base/common/strings';
 import { IExtHostTelemetryLogService } from 'vs/workbench/api/common/extHostTelemetryLogService';
+import { IExtHostLocalizationService } from 'vs/workbench/api/common/extHostLocalizationService';
 
 export interface IExtensionRegistries {
 	mine: ExtensionDescriptionRegistry;
@@ -152,6 +153,7 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 	const extHostSearch = rpcProtocol.set(ExtHostContext.ExtHostSearch, accessor.get(IExtHostSearch));
 	const extHostTask = rpcProtocol.set(ExtHostContext.ExtHostTask, accessor.get(IExtHostTask));
 	const extHostOutputService = rpcProtocol.set(ExtHostContext.ExtHostOutputService, accessor.get(IExtHostOutputService));
+	const extHostLocalization = rpcProtocol.set(ExtHostContext.ExtHostLocalization, accessor.get(IExtHostLocalizationService));
 
 	// manually create and register addressable instances
 	const extHostUrls = rpcProtocol.set(ExtHostContext.ExtHostUrls, new ExtHostUrls(rpcProtocol));
@@ -297,6 +299,31 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			}
 		};
 
+		const i18n = (...args: [str: string, ...args: string[]] | [options: string[], str: string, ...args: string[]]): string => {
+			checkProposedApiEnabled(extension, 'localization');
+			// Get rid of comments if they are there
+			if (Array.isArray(args[0])) {
+				args.shift();
+			}
+			const key = args.shift() as string;
+			return extHostLocalization.getMessage(extension.identifier.value, key, ...args as string[]);
+		};
+
+		Object.defineProperties(i18n, {
+			bundleContents: {
+				get() {
+					checkProposedApiEnabled(extension, 'localization');
+					extHostLocalization.getBundleContents(extension.identifier.value);
+				},
+			},
+			bundleUri: {
+				get() {
+					checkProposedApiEnabled(extension, 'localization');
+					extHostLocalization.getBundleUri(extension.identifier.value);
+				},
+			}
+		});
+
 		// namespace: env
 		const env: typeof vscode.env = {
 			get machineId() { return initData.telemetryInfo.machineId; },
@@ -358,7 +385,8 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			},
 			get uiKind() {
 				return initData.uiKind;
-			}
+			},
+			i18n: i18n as typeof vscode.env.i18n
 		};
 		if (!initData.environment.extensionTestsLocationURI) {
 			// allow to patch env-function when running tests
