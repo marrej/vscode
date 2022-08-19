@@ -591,11 +591,11 @@ export class ExtHostWorkspace implements ExtHostWorkspaceShape, IExtHostWorkspac
 
 		this._editSessionIdentityProviders.set(scheme, provider);
 		const outgoingScheme = this._uriTransformerService.transformOutgoingScheme(scheme);
-		this._proxy.$registerEditSessionIdentityProvider(outgoingScheme);
+		const disposable = this._proxy.$registerEditSessionIdentityProvider(outgoingScheme);
 
 		return toDisposable(() => {
 			this._editSessionIdentityProviders.delete(scheme);
-			this._proxy.$unregisterEditSessionIdentityProvider(outgoingScheme);
+			disposable.then((d) => d.dispose());
 		});
 	}
 

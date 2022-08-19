@@ -224,16 +224,12 @@ export class MainThreadWorkspace implements MainThreadWorkspaceShape {
 	}
 
 	// --- edit sessions ---
-	$registerEditSessionIdentityProvider(scheme: string) {
-		this._editSessionIdentityService.registerEditSessionIdentityProvider({
+	async $registerEditSessionIdentityProvider(scheme: string) {
+		return this._editSessionIdentityService.registerEditSessionIdentityProvider({
 			scheme: scheme,
 			getEditSessionIdentifier: async (workspaceFolder: WorkspaceFolder, token: CancellationToken) => {
 				return this._proxy.$getEditSessionIdentifier(workspaceFolder.uri, token);
 			}
 		});
-	}
-
-	$unregisterEditSessionIdentityProvider(scheme: string) {
-		this._editSessionIdentityService.unregisterEditSessionIdentityProvider(scheme);
 	}
 }
