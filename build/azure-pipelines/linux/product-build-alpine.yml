@@ -142,12 +142,12 @@ steps:
 
       case $VSCODE_ARCH in
         x64)
-          reh='vscode-reh-linux-alpine-min-ci'
-          rehweb='vscode-reh-web-linux-alpine-min-ci'
+          reh='vscode-reh-linux-alpine-ci'
+          rehweb='vscode-reh-web-linux-alpine-ci'
           ;;
         arm64)
-          reh='vscode-reh-alpine-arm64-min-ci'
-          rehweb='vscode-reh-web-alpine-arm64-min-ci'
+          reh='vscode-reh-alpine-arm64-ci'
+          rehweb='vscode-reh-web-alpine-arm64-ci'
           ;;
       esac
 

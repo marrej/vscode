@@ -119,7 +119,7 @@ steps:
   - script: |
       set -e
       VSCODE_MIXIN_PASSWORD="$(github-distro-mixin-password)" \
-        yarn gulp vscode-web-min-ci
+        yarn gulp vscode-web-ci
     displayName: Build
 
   - task: AzureCLI@2
